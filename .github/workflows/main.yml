@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Demo Pipeline
 
 on:
   push:
@@ -6,22 +6,33 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Build step (demo)
       - name: Build
-        run: echo "Building the application"
+        run: echo "Building the application..."
 
+      # Step 3: Build Docker image
       - name: Build Docker Image
         run: |
-          sudo docker build -t demo-pipeline-image .
+          sudo docker build -t demo-pipeline-image:${{ github.sha }} .
 
-      - name: Run tests
+      # Step 4: Run tests
+      - name: Run Tests
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install pytest
           pytest
+
+      # Step 5: Simulated Kubernetes deploy
+      - name: Simulate Kubernetes Deployment
+        run: |
+          echo "Deploying to Kubernetes..."
+          echo "kubectl set image deployment/demo-app-deployment demo-app-container=demo-pipeline-image:${{ github.sha }}"
+          echo "Rollout complete ✅"
