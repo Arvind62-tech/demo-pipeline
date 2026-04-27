@@ -1,34 +1,32 @@
-name: SFTP Automation Pipeline
+name: EC2-1 to EC2-2 File Transfer (SFTP)
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_dispatch:   # manual trigger from GitHub UI
 
 jobs:
-  deploy:
+  transfer:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SSH client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
-
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Add EC2 to known hosts
+      - name: Add EC2 hosts to known hosts
         run: |
+          ssh-keyscan -H 3.237.10.133 >> ~/.ssh/known_hosts
           ssh-keyscan -H 54.82.35.72 >> ~/.ssh/known_hosts
 
-      - name: Create file
-        run: echo "Hello from GitHub Actions" > test.txt
+      - name: Fetch file from EC2-1
+        run: |
+          scp -i ~/.ssh/id_rsa ubuntu@3.237.10.133:/home/ubuntu/test.txt .
 
-      - name: SFTP transfer to EC2-2
+      - name: Verify file
+        run: ls -l
+
+      - name: Transfer file to EC2-2 via SFTP
         run: |
           sftp -i ~/.ssh/id_rsa ubuntu@54.82.35.72 <<EOF
           put test.txt
