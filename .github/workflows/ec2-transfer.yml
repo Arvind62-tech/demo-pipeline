@@ -1,0 +1,32 @@
+name: EC2 SFTP File Transfer
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Pull file from EC2-1 using SFTP
+        run: |
+          sftp -i key.pem -o StrictHostKeyChecking=no ubuntu@3.237.10.133 <<EOF
+          get /home/ubuntu/data.txt
+          bye
+          EOF
+
+      - name: Push file to EC2-2 using SFTP
+        run: |
+          sftp -i key.pem -o StrictHostKeyChecking=no ubuntu@54.82.35.72 <<EOF
+          put data.txt /home/ubuntu/sftp-test/
+          bye
+          EOF
