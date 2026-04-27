@@ -1,7 +1,7 @@
-name: EC2-1 to EC2-2 File Transfer (SFTP)
+name: EC2 File Transfer Pipeline
 
 on:
-  workflow_dispatch:   # manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   transfer:
@@ -14,19 +14,23 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Add EC2 hosts to known hosts
+      - name: Add EC2 hosts
         run: |
           ssh-keyscan -H 3.237.10.133 >> ~/.ssh/known_hosts
           ssh-keyscan -H 54.82.35.72 >> ~/.ssh/known_hosts
 
-      - name: Fetch file from EC2-1
+      - name: Test EC2-1 connection
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@3.237.10.133 "ls -l /home/ubuntu"
+
+      - name: Copy file from EC2-1
         run: |
           scp -i ~/.ssh/id_rsa ubuntu@3.237.10.133:/home/ubuntu/test.txt .
 
-      - name: Verify file
+      - name: Check file
         run: ls -l
 
-      - name: Transfer file to EC2-2 via SFTP
+      - name: Send file to EC2-2
         run: |
           sftp -i ~/.ssh/id_rsa ubuntu@54.82.35.72 <<EOF
           put test.txt
