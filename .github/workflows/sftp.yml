@@ -1,0 +1,36 @@
+name: SFTP Automation Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SSH client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add EC2 to known hosts
+        run: |
+          ssh-keyscan -H 54.82.35.72 >> ~/.ssh/known_hosts
+
+      - name: Create file
+        run: echo "Hello from GitHub Actions" > test.txt
+
+      - name: SFTP transfer to EC2-2
+        run: |
+          sftp -i ~/.ssh/id_rsa ubuntu@54.82.35.72 <<EOF
+          put test.txt
+          bye
+          EOF
