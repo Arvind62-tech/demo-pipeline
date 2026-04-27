@@ -1,0 +1,32 @@
+name: EC2 SFTP Automation
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add hosts
+        run: |
+          ssh-keyscan -H EC2_1_IP >> ~/.ssh/known_hosts
+          ssh-keyscan -H EC2_2_IP >> ~/.ssh/known_hosts
+
+      - name: Pull file from EC2-1
+        run: |
+          scp -i ~/.ssh/id_rsa ubuntu@EC2_1_IP:/home/ubuntu/test.txt .
+
+      - name: Send file to EC2-2
+        run: |
+          sftp -i ~/.ssh/id_rsa ubuntu@EC2_2_IP <<EOF
+          put test.txt
+          bye
+          EOF
